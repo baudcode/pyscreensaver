@@ -37,7 +37,7 @@ sudo apt-get install davfs2
 Put into /etc/fstab and mount
 ```bash
 # put line into /etc/fstab (sudo required)
-<url> <directory> davfs user,rw,auto,errors=remount-ro 0 0
+<url> <directory> davfs user,rw,autow 0 0
 
 # put line into /etc/davfs2/secrets (sudo required)
 <url> <user> <password>
