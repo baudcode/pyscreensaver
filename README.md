@@ -8,7 +8,7 @@ It should also auto-update itself with the latest pictures after each run-throug
 Use the `config.yaml` to connect either to an **ftp server** or stream data **locally** from drive (this path could also be a mounted path from shared space).
 
 
-Install and run:
+#### Install and run:
 
 ```bash
 sudo apt-get install python3-tk
@@ -21,13 +21,18 @@ pip install -r requirements.txt
 # edit config.yaml
 python gui.py # runs tkinter gui
 
-python dear_gui.py # runs dearpygui (:deprecated needs `pip install dearpygui`)
+python dear_gui.py # runs dearpygui (:deprecated: needs `pip install dearpygui`)
 ```
 
+#### Keyboard Shortcuts
+
+- `q` - quit
+- `f` - exit fullscreen mode
+
+
+####  Webdav
 
 My Current Setup uses the following (not required for this project)
-
-- Webdav
 
 Install:
 ```bash
