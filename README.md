@@ -11,7 +11,7 @@ Use the `config.yaml` to connect either to an **ftp server** or stream data **lo
 Install and run:
 
 ```bash
-sudo apt-get install python3-tkinter
+sudo apt-get install python3-tk
 
 python3 -m venv venv
 source venv/bin/activate
