@@ -1,0 +1,13 @@
+streamer:
+  type: DirectoryStreamer
+  path: /home/baudcode/images
+  randomize: true # randomize the images after each run-trough of all images at this location
+
+  # type: FTPStreamer
+  # host: localhost # mandatory
+  # path: ""
+  # user:
+  # passwd: 
+
+timeout: .5 # this this to define the wait interval between image loads
+mode: "endless" # to stop after one iteration use 'once', otherwise use 'endless' to run in infite mode

@@ -1,0 +1,6 @@
+pyyaml
+dearpygui
+pil
+numpy
+opencv-python
+screeninfo
