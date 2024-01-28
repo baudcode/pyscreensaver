@@ -1,6 +1,6 @@
 streamer:
   type: DirectoryStreamer
-  path: /home/baudcode/images
+  path: /home/baudcode/elias/DigitalerBilderrahmen/
   randomize: true # randomize the images after each run-trough of all images at this location
 
   # type: FTPStreamer
@@ -9,5 +9,6 @@ streamer:
   # user:
   # passwd: 
 
-timeout: .5 # this this to define the wait interval between image loads
+timeout: 5 # this this to define the wait interval between image loads
 mode: "endless" # to stop after one iteration use 'once', otherwise use 'endless' to run in infite mode
+fullscreen: true

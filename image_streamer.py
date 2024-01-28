@@ -87,8 +87,8 @@ def resize_with_pad(image, target_width, target_height, interpolation=None):
         new_width = target_width
         scale = new_width / image_width
         new_height = round(scale * image_height)
-        print(
-            f"resizing from {image_width}x{image_height} to {new_width}x{new_height}")
+        # print(
+        #     f"resizing from {image_width}x{image_height} to {new_width}x{new_height}")
 
         if interpolation is None:
             interpolation = cv2.INTER_AREA if new_width < image_width else cv2.INTER_CUBIC
@@ -107,8 +107,8 @@ def resize_with_pad(image, target_width, target_height, interpolation=None):
         scale = new_height / image_height
 
         new_width = round(scale * image_width)
-        print(
-            f"resizing from {image_width}x{image_height} to {new_width}x{new_height}")
+        # print(
+        #     f"resizing from {image_width}x{image_height} to {new_width}x{new_height}")
         image = cv2.resize(image, (new_width, new_height),
                            interpolation=cv2.INTER_AREA if new_width < image_width else cv2.INTER_CUBIC)
 

@@ -11,13 +11,17 @@ Use the `config.yaml` to connect either to an **ftp server** or stream data **lo
 Install and run:
 
 ```bash
+sudo apt-get install python3-tkinter
+
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
 
 # edit config.yaml
-python gui.py
+python gui.py # runs tkinter gui
+
+python dear_gui.py # runs dearpygui (:deprecated needs `pip install dearpygui`)
 ```
 
 
