@@ -21,7 +21,7 @@ pip install -r requirements.txt
 # edit config.yaml
 python gui.py # runs tkinter gui
 
-python dear_gui.py # runs dearpygui (:deprecated: needs `pip install dearpygui`)
+# python dear_gui.py # runs dearpygui (:deprecated: needs `pip install dearpygui`)
 ```
 
 #### Keyboard Shortcuts
