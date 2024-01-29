@@ -54,7 +54,7 @@ sudo chmod 600 /etc/davfs2/secrets
 sudo mount <url>
 ```
 
-### Disable Raspberry PI Screensaver
+#### Disable Raspberry PI Screensaver
 
 ```bash
 sudo raspi-config
