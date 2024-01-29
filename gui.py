@@ -67,7 +67,7 @@ if config.get("fullscreen", False):
     toggle_fullscreen()
 
 
-def show_pil(update_image: Image.Image):
+def update_global_state(update_image: Image.Image):
     global image
     image = update_image
 
@@ -81,18 +81,14 @@ async def update_image():
 
         streamer = load_streamer(config)
         for image in streamer:
-            try:
-                show_pil(image)
-            except tkinter.TclError:
-                endless = False
-                break
-
+            update_global_state(image)
             await asyncio.sleep(timeout)
 
         once = False
 
 
-def resize_smaller_side(image, target_width: int, target_height: int):
+def resize_fit(image, target_width: int, target_height: int):
+    """ resizes image with keeping aspect ratio """
     image_width, image_height = image.size[0], image.size[1]
 
     scale_factor = max(image_width / target_width,
@@ -106,7 +102,7 @@ def resize_smaller_side(image, target_width: int, target_height: int):
 
 
 async def main_thread():
-    # run screen updates
+    # run screen updates once to get the screen size
     root.update_idletasks()
     root.update()
 
@@ -116,12 +112,9 @@ async def main_thread():
         if w == 1 or h == 1:
             continue
 
-        assert isinstance(image, Image.Image), f"image is {type(image)} type"
-
-        resized = resize_smaller_side(image, w, h)
-
-        # resized, _, _ = resize_with_pad(np.asarray(
-        #     image), target_width=w, target_height=h)
+        assert isinstance(
+            image, Image.Image), f"image is {type(image)} type, instead of Image.Image"
+        resized = resize_fit(image, w, h)
 
         tk_image = ImageTk.PhotoImage(resized)
         canvas.create_image(w // 2, h // 2, image=tk_image)
