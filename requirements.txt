@@ -1,6 +1,6 @@
 pyyaml
 pillow
 numpy
-opencv-python
+# opencv-python
 # dearpygui
 # screeninfo

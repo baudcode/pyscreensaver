@@ -8,7 +8,7 @@ else:
     import tkinter
 from PIL import Image, ImageTk
 import numpy as np
-from image_streamer import load_streamer, load_config, resize_with_pad
+from image_streamer import load_streamer, load_config
 import asyncio
 
 config = load_config("config.yaml")
@@ -61,7 +61,7 @@ root.bind("<q>", quit_application)
 canvas = tkinter.Canvas(root, width=w, height=h,
                         background='black', highlightthickness=0)
 canvas.pack()
-image = np.zeros((h, w, 3), 'uint8')
+image = Image.fromarray(np.zeros((h, w, 3), 'uint8'))
 
 if config.get("fullscreen", False):
     toggle_fullscreen()
@@ -92,14 +92,38 @@ async def update_image():
         once = False
 
 
+def resize_smaller_side(image, target_width: int, target_height: int):
+    image_width, image_height = image.size[0], image.size[1]
+
+    scale_factor = max(image_width / target_width,
+                       image_height / target_height)
+
+    new_size = int(image.size[0] /
+                   scale_factor), int(image.size[1] / scale_factor)
+    resized = image.resize(new_size)
+
+    return resized
+
+
 async def main_thread():
+    # run screen updates
+    root.update_idletasks()
+    root.update()
+
     while 1:
         # update canvas
         w, h = root.winfo_width(), root.winfo_height()
-        resized, _, _ = resize_with_pad(np.asarray(
-            image), target_width=w, target_height=h)
+        if w == 1 or h == 1:
+            continue
 
-        tk_image = ImageTk.PhotoImage(Image.fromarray(resized))
+        assert isinstance(image, Image.Image), f"image is {type(image)} type"
+
+        resized = resize_smaller_side(image, w, h)
+
+        # resized, _, _ = resize_with_pad(np.asarray(
+        #     image), target_width=w, target_height=h)
+
+        tk_image = ImageTk.PhotoImage(resized)
         canvas.create_image(w // 2, h // 2, image=tk_image)
 
         # run screen updates
