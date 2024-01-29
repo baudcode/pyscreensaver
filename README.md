@@ -53,3 +53,21 @@ sudo chmod 600 /etc/davfs2/secrets
 # mount directory
 sudo mount <url>
 ```
+
+### Disable Raspberry PI Screensaver
+
+```bash
+sudo raspi-config
+```
+
+disable `screen blanking` in the `display settings`.
+
+If that does not work use:
+```bash
+sudo apt-get install xscreensaver
+```
+
+After install, went to Rpi's desktop "Menu" (left top corner)
+Went to preference ---> screensaver.
+Then In mode : section, selected "disable screensaver" and closed.
+Rebooted Rpi.
