@@ -1,4 +1,5 @@
 import sys
+
 # the tkinter library changed it's name from Python 2 to 3.
 if sys.version_info[0] == 2:
     import Tkinter
@@ -6,10 +7,13 @@ if sys.version_info[0] == 2:
     tkinter = Tkinter
 else:
     import tkinter
-from PIL import Image, ImageTk
-import numpy as np
-from image_streamer import load_streamer, load_config
 import asyncio
+from contextvars import ContextVar
+
+import numpy as np
+from PIL import Image, ImageTk
+
+from image_streamer import load_config, load_streamer
 
 config = load_config("config.yaml")
 fullscreen = config.get('fullscreen', False)
@@ -67,12 +71,19 @@ if config.get("fullscreen", False):
     toggle_fullscreen()
 
 
-def update_global_state(update_image: Image.Image):
+def update_global_state(update_image: Image.Image, event: asyncio.Event):
     global image
+    print('update image var...')
     image = update_image
+    event.set()
+
+    # wait until the event is deactivated
+    while event.set():
+        print("waiting until event is cleared")
+        asyncio.sleep(.5)
 
 
-async def update_image():
+async def update_image(event: asyncio.Event):
     endless = config['mode'] == 'endless'
     once = True
     timeout = config.get("timeout", 10)
@@ -81,7 +92,7 @@ async def update_image():
 
         streamer = load_streamer(config)
         for image in streamer:
-            update_global_state(image)
+            update_global_state(image, event)
             await asyncio.sleep(timeout)
 
         once = False
@@ -101,7 +112,8 @@ def resize_fit(image, target_width: int, target_height: int):
     return resized
 
 
-async def main_thread():
+async def main_thread(event: asyncio.Event):
+    global image
     # run screen updates once to get the screen size
     root.update_idletasks()
     root.update()
@@ -111,25 +123,34 @@ async def main_thread():
         w, h = root.winfo_width(), root.winfo_height()
         if w == 1 or h == 1:
             continue
+            
+        if event.is_set():
+        
+            print("event is set...")
+            event.clear()
+            print("updating image from image var...")
 
-        assert isinstance(
-            image, Image.Image), f"image is {type(image)} type, instead of Image.Image"
-        resized = resize_fit(image, w, h)
+            assert isinstance(
+                image, Image.Image), f"image is {type(image)} type, instead of Image.Image"
+            resized = resize_fit(image, w, h)
 
-        tk_image = ImageTk.PhotoImage(resized)
-        canvas.create_image(w // 2, h // 2, image=tk_image)
+            tk_image = ImageTk.PhotoImage(resized)
+            canvas.create_image(w // 2, h // 2, image=tk_image)
 
         # run screen updates
         root.update_idletasks()
         root.update()
+        await asyncio.sleep(.3)
 
-        await asyncio.sleep(.01)
+        
+
 
 
 async def main():
+    event = asyncio.Event()
     await asyncio.gather(
-        main_thread(),
-        update_image()
+        main_thread(event=event),
+        update_image(event=event)
     )
 
 if __name__ == "__main__":
