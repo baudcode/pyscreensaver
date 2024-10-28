@@ -1,4 +1,16 @@
+import asyncio
 import sys
+import time
+from pathlib import Path
+
+import numpy as np
+from PIL import ExifTags, Image, ImageTk
+
+from image_streamer import load_config, load_streamer
+
+print("Waiting for 5 seconds")  # noqa
+time.sleep(5)
+print("Starting App")
 
 # the tkinter library changed it's name from Python 2 to 3.
 if sys.version_info[0] == 2:
@@ -7,15 +19,11 @@ if sys.version_info[0] == 2:
     tkinter = Tkinter
 else:
     import tkinter
-import asyncio
-from contextvars import ContextVar
 
-import numpy as np
-from PIL import Image, ImageTk
 
-from image_streamer import load_config, load_streamer
+cur_dir = Path(__file__).parent
 
-config = load_config("config.yaml")
+config = load_config(cur_dir / "config.yaml")
 fullscreen = config.get('fullscreen', False)
 root = tkinter.Tk()
 
@@ -111,6 +119,31 @@ def resize_fit(image, target_width: int, target_height: int):
 
     return resized
 
+def get_orientation_exif_tag():
+    for k, v in ExifTags.TAGS.items():
+        if v == 'Orientation':
+            return k
+    raise ValueError("cannot find Orientation exif tag in global tags")
+
+def rotate_for_orientation(image: Image.Image):
+
+    try:
+        orientation = get_orientation_exif_tag()
+        exif = dict(image._getexif().items())
+
+        if exif[orientation] == 3:
+            image = image.transpose(Image.ROTATE_180)
+        elif exif[orientation] == 6:
+            image = image.transpose(Image.ROTATE_270)
+        elif exif[orientation] == 8:
+            image = image.transpose(Image.ROTATE_90)
+
+    except (AttributeError, KeyError, IndexError):
+        # cases: image don't have getexif
+        pass
+
+    return image
+
 
 async def main_thread(event: asyncio.Event):
     global image
@@ -123,15 +156,17 @@ async def main_thread(event: asyncio.Event):
         w, h = root.winfo_width(), root.winfo_height()
         if w == 1 or h == 1:
             continue
-            
+
         if event.is_set():
-        
+
             print("event is set...")
             event.clear()
             print("updating image from image var...")
 
             assert isinstance(
                 image, Image.Image), f"image is {type(image)} type, instead of Image.Image"
+            # TODO: check which orientation the image has.
+            # image = rotate_for_orientation(image)
             resized = resize_fit(image, w, h)
 
             tk_image = ImageTk.PhotoImage(resized)
@@ -141,9 +176,6 @@ async def main_thread(event: asyncio.Event):
         root.update_idletasks()
         root.update()
         await asyncio.sleep(.3)
-
-        
-
 
 
 async def main():
