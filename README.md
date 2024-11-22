@@ -95,3 +95,54 @@ After install, went to Rpi's desktop "Menu" (left top corner)
 Went to preference ---> screensaver.
 Then In mode : section, selected "disable screensaver" and closed.
 Rebooted Rpi.
+
+#### Performance optimization on PI zero
+
+1. Disable automatic updates
+
+```bash
+sudo systemctl disable packagekit
+```
+
+2. Use i3 window manager (will remove ability)
+
+```bash
+sudo apt-get install -y i3
+```
+
+- Now change xserver (lightdm) to actually load i3 session
+
+Edit /etc/lightdm/lightdm.conf:
+
+```bash
+sudo nano /etc/lightdm/lightdm.conf
+```
+with
+```bash
+greeter-session=pi-greeter-labwc
+user-session=i3
+autologin-session=i3
+```
+
+- Autostart the script on i3
+
+Edit `~/.config/i3/config`
+and add line
+
+```bash
+exec --no-startup-id /home/pi/pyscreensaver/venv/bin/python /home/pi/pyscreensaver/gui.py
+```
+
+##### I3 Helper commands:
+
+```
+Win+Enter => open terminal
+Win+D => start a program by name (filemanger: pcmanfm)
+```
+
+Connect to a Wifi Network
+```bash
+sudo nmcli r wifi on
+sudo nmcli dev wifi
+sudo nmcli dev wifi connect "SSID" password "PASSWORD"
+```
