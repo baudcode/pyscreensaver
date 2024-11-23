@@ -124,13 +124,17 @@ user-session=i3
 autologin-session=i3
 ```
 
-- Autostart the script on i3
+- Autostart the script on i3 + disable screensaver + disable energy saving
 
 Edit `~/.config/i3/config`
 and add line
 
 ```bash
 exec --no-startup-id /home/pi/pyscreensaver/venv/bin/python /home/pi/pyscreensaver/gui.py
+# disable screensaver
+exec xset s off
+# disable power saving
+exec xset -dpms
 ```
 
 ##### I3 Helper commands:
