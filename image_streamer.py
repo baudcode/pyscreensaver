@@ -1,18 +1,68 @@
-import random
-import yaml
-from typing import Union
-from pathlib import Path
-from typing import Protocol, Iterator
-from PIL import Image
+import dataclasses
 import io
+import random
+from pathlib import Path
+from typing import Iterator, List, Optional, Protocol, Tuple, Union
+
+import yaml
+from PIL import Image
+
+
+@dataclasses.dataclass
+class _StreamerConfig:
+    type: str
+    path: str
+    randomize: bool = False
+    extensions: List[str] = dataclasses.field(default_factory=lambda: ['jpg', 'png', 'jpeg'])
+    pattern: str = "*"
+
+    # optional attributes for ftp streamer
+    host: str = None
+    passwd: str = ""
+    user: str = ""
+
+
+@dataclasses.dataclass
+class _TextConfig:
+    show: bool = False
+    x: int = 10
+    y: int = 10
+    font_size: int = 24
+    color: str = "white"
+    font: str = "Arial"
+    format: str = "%0"
+    type: str = "bold"
+    anchor: str = "nw"
+
+@dataclasses.dataclass
+class Config:
+    streamer: _StreamerConfig
+
+    fullscreen: bool = True
+    timeout: int = 5
+    mode: str = "endless"
+    text: Optional[_TextConfig] = None
+    
+    @classmethod
+    def from_dict(self, data: dict):
+        _text = data.pop("text", None)
+        text = _TextConfig(**_text) if _text is not None else None
+        _streamer = data.pop("streamer")
+        streamer = _StreamerConfig(**_streamer)
+
+        return Config(
+            streamer=streamer,
+            text=text,
+            **data,
+        )
 
 
 class StreamerProtocol(Protocol):
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[Image.Image, Path]]:
         """ returns the next image to show on the wallpaper"""
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ shows how many images to iterate over """
 
 
@@ -21,18 +71,18 @@ class StreamerBase(StreamerProtocol):
     def __init__(self):
         self._current = 0
 
-    def __iter__(self) -> Iterator[Image.Image]:
+    def __iter__(self) -> Iterator[Tuple[Image.Image, Path]]:
         return self
 
-    def __next__(self) -> Image.Image:
+    def __next__(self) -> Tuple[Image.Image, Path]:
         if self._current == len(self.paths):
             raise StopIteration
         else:
-            image = self.get(self._current)
+            image, path = self.get(self._current)
             self._current += 1
-            return image
+            return image, path
 
-    def get(self, index: int) -> Image.Image:
+    def get(self, index: int) -> Tuple[Image.Image, Path]:
         raise NotImplementedError("__call__ not implemented")
 
 
@@ -60,7 +110,8 @@ class FTPStreamer(StreamerBase):
         return len(self.paths)
 
     def get(self, index: int):
-        return self._read_image(self.paths[index])
+        path = self.paths[index]
+        return self._read_image(path), path
 
     def _read_image(self, path: str):
         stream = io.BytesIO()
@@ -93,32 +144,34 @@ class DirectoryStreamer(StreamerBase):
         return len(self.paths)
 
     def get(self, index: int):
-        return Image.open(self.paths[index])
+        path = self.paths[index]
+        return Image.open(path), path
 
 
-def load_config(config_path: str):
+def load_config(config_path: str) -> Config:
     with Path(config_path).open("r") as reader:
         data = yaml.load(reader, yaml.SafeLoader)
-    return data
+    return Config.from_dict(data)
 
 
-def load_streamer(config: dict) -> StreamerProtocol:
-    data = config['streamer']
+def load_streamer(config: Config) -> StreamerProtocol:
+    data = config.streamer
 
-    if data['type'] == 'DirectoryStreamer':
+    if data.type == 'DirectoryStreamer':
         return DirectoryStreamer(
-            d=data['path'],
-            extensions=data.get('extensions', ['jpg', 'png', 'jpeg']),
-            pattern=data.get("pattern", "*"),
-            randomize=data.get('randomize', True)
+            d=data.path,
+            extensions=data.extensions,
+            pattern=data.pattern,
+            randomize=data.randomize
         )
     elif data['type'] == 'FTPStreamer':
+        assert data.host is not None, "`host` needs to be set"
         return FTPStreamer(
-            server_host=data['host'],
-            directory=data.get('path', ""),
-            user=data.get("user", ""),
-            passwd=data.get("passwd", ""),
-            randomize=data.get('randomize', True)
+            server_host=data.host,
+            directory=data.path,
+            user=data.user,
+            passwd=data.passwd,
+            randomize=data.randomize
         )
     else:
         raise Exception(

@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import sys
 import time
 from pathlib import Path
@@ -24,7 +25,6 @@ else:
 cur_dir = Path(__file__).parent
 
 config = load_config(cur_dir / "config.yaml")
-fullscreen = config.get('fullscreen', False)
 root = tkinter.Tk()
 
 w, h = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -74,15 +74,17 @@ canvas = tkinter.Canvas(root, width=w, height=h,
                         background='black', highlightthickness=0)
 canvas.pack()
 image = Image.fromarray(np.zeros((h, w, 3), 'uint8'))
+current_path = None
 
-if config.get("fullscreen", False):
+if config.fullscreen:
     toggle_fullscreen()
 
 
-def update_global_state(update_image: Image.Image, event: asyncio.Event):
-    global image
+def update_global_state(update_image: Image.Image, update_path: Path, event: asyncio.Event):
+    global image, current_path
     print('update image var...')
     image = update_image
+    current_path = update_path
     event.set()
 
     # wait until the event is deactivated
@@ -92,16 +94,15 @@ def update_global_state(update_image: Image.Image, event: asyncio.Event):
 
 
 async def update_image(event: asyncio.Event):
-    endless = config['mode'] == 'endless'
+    endless = config.mode == 'endless'
     once = True
-    timeout = config.get("timeout", 10)
 
     while endless or once:
 
         streamer = load_streamer(config)
-        for image in streamer:
-            update_global_state(image, event)
-            await asyncio.sleep(timeout)
+        for image, path in streamer:
+            update_global_state(image, path, event)
+            await asyncio.sleep(config.timeout)
 
         once = False
 
@@ -146,7 +147,7 @@ def rotate_for_orientation(image: Image.Image):
 
 
 async def main_thread(event: asyncio.Event):
-    global image
+    global image, current_path, config
     # run screen updates once to get the screen size
     root.update_idletasks()
     root.update()
@@ -158,11 +159,11 @@ async def main_thread(event: asyncio.Event):
             continue
 
         if event.is_set():
-
+            
             print("event is set...")
             event.clear()
             print("updating image from image var...")
-
+            canvas.delete("all")
             assert isinstance(
                 image, Image.Image), f"image is {type(image)} type, instead of Image.Image"
             # TODO: check which orientation the image has.
@@ -171,6 +172,27 @@ async def main_thread(event: asyncio.Event):
 
             tk_image = ImageTk.PhotoImage(resized)
             canvas.create_image(w // 2, h // 2, image=tk_image)
+            
+            if config.text:
+                
+                # format text by format given
+                current = current_path
+                text = copy.deepcopy(config.text.format)
+                i = 0
+
+                while current.parent != Path("/") and i != 50:
+                    if f"%{i}" in text:
+                        text = text.replace(f"%{i}", current.name)
+                    i += 1
+                    current = current.parent
+
+                canvas.create_text(
+                    config.text.x, config.text.y,
+                    text=text,
+                    font=(config.text.font, config.text.font_size, config.text.type),
+                    fill=config.text.color,
+                    anchor=config.text.anchor # ["nw", "n", "ne", "w", "center", "e", "sw", "s", "se"]
+                )
 
         # run screen updates
         root.update_idletasks()
