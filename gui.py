@@ -167,7 +167,7 @@ async def main_thread(event: asyncio.Event):
             assert isinstance(
                 image, Image.Image), f"image is {type(image)} type, instead of Image.Image"
             # TODO: check which orientation the image has.
-            # image = rotate_for_orientation(image)
+            image = rotate_for_orientation(image)
             resized = resize_fit(image, w, h)
 
             tk_image = ImageTk.PhotoImage(resized)
