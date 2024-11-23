@@ -137,6 +137,13 @@ exec xset s off
 exec xset -dpms
 ```
 
+- Increase swap size
+Edit /etc/dphys-swapfile with sudo.
+```bash
+# change this value
+CONF_SWAPSIZE=1000
+```
+
 ##### I3 Helper commands:
 
 ```
