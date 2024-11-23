@@ -6,7 +6,7 @@ device that can display latest family vacation pictures in the living room on a 
 It should also auto-update itself with the latest pictures after each run-through. 
 
 Use the `config.yaml` to connect either to an **ftp server** or stream data **locally** from drive (this path could also be a mounted path from shared space).
-
+See `text_config.yaml` for adding and showing text (filename + parents).
 
 #### Install and run:
 
