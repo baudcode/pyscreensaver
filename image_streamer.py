@@ -44,7 +44,7 @@ class Config:
     timeout: int = 5
     mode: str = "endless"
     text: Optional[_TextConfig] = None
-    initial_sleep: int = 0
+    initial_sleep: int = 5
     
     @classmethod
     def from_dict(self, data: dict):
