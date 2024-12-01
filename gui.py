@@ -3,6 +3,7 @@ import copy
 import sys
 import time
 from pathlib import Path
+from timeit import default_timer
 
 import numpy as np
 from PIL import ExifTags, Image, ImageDraw, ImageFont, ImageTk
@@ -82,18 +83,20 @@ if config.fullscreen:
     toggle_fullscreen()
 
 
-def update_global_state(update_image: Image.Image, update_path: Path, event: asyncio.Event):
+async def update_global_state(update_image: Image.Image, update_path: Path, event: asyncio.Event):
     global image, current_path
     print('update image var...')
     image = update_image
     current_path = update_path
+
+    # wait until image is copied
     event.set()
+    await asyncio.sleep(.1)
 
     # wait until the event is deactivated
-    while event.set():
+    while event.is_set():
         print("waiting until event is cleared")
-        asyncio.sleep(.5)
-
+        await asyncio.sleep(.5)
 
 async def update_image(event: asyncio.Event):
     endless = config.mode == 'endless'
@@ -102,9 +105,9 @@ async def update_image(event: asyncio.Event):
     while endless or once:
 
         streamer = load_streamer(config)
+
         for image, path in streamer:
-            update_global_state(image, path, event)
-            await asyncio.sleep(config.timeout)
+            await update_global_state(image, path, event)
 
         once = False
 
@@ -252,6 +255,9 @@ async def main_thread(event: asyncio.Event):
     root.update_idletasks()
     root.update()
 
+    current_image = None
+    last_update = default_timer()
+
     while 1:
         # update canvas
         w, h = root.winfo_width(), root.winfo_height()
@@ -259,17 +265,20 @@ async def main_thread(event: asyncio.Event):
             continue
 
         if event.is_set():
+            # transform image
+            print("processing starting image")
+            start = default_timer()
+            current_image = rotate_for_orientation(image)
+            resized = resize_fit(current_image, w, h)
+            print(f"processing image finished in {(default_timer() - start)}")
+
             event.clear()
 
             # delete the canvas
             print("updating image from image var...")
             canvas.delete("all")
             assert isinstance(
-                image, Image.Image), f"image is {type(image)} type, instead of Image.Image"
-            
-            # transform image
-            image = rotate_for_orientation(image)
-            resized = resize_fit(image, w, h)
+                resized, Image.Image), f"image is {type(resized)} type, instead of Image.Image"
 
             # write image
             tk_image = ImageTk.PhotoImage(resized)
@@ -286,10 +295,22 @@ async def main_thread(event: asyncio.Event):
                     fill=color,
                     anchor=config.text.anchor # ["nw", "n", "ne", "w", "center", "e", "sw", "s", "se"]
                 )
+            
+            root.update()
+
+            # update to spend only config.timeout time
+            time_for_update = default_timer() - last_update
+
+            sleep_time = max(config.timeout - time_for_update, 0)
+            print(f"sleeping for {sleep_time}")
+            await asyncio.sleep(sleep_time)
+
+            # mark the time of the last update
+            last_update = default_timer()
+
+        root.update_idletasks()
 
         # run screen updates
-        root.update_idletasks()
-        root.update()
         await asyncio.sleep(.3)
 
 
