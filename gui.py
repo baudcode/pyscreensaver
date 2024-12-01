@@ -308,6 +308,7 @@ async def main_thread(event: asyncio.Event):
             # mark the time of the last update
             last_update = default_timer()
 
+        root.update()
         root.update_idletasks()
 
         # run screen updates
