@@ -13,7 +13,6 @@ timeout: 5 # this this to define the wait interval between image loads
 mode: "endless" # to stop after one iteration use 'once', otherwise use 'endless' to run in infite mode
 fullscreen: true
 text:
-  show: false
   x: 10
   y: 10
   font_size: 24
@@ -21,3 +20,5 @@ text:
   font: "Arial" 
   type: "bold"
   format: "%0 - %1"
+  contrast_color: "black"
+  white_threshold: 235
