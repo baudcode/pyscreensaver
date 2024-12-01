@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 from PIL import ExifTags, Image, ImageTk
 
-from image_streamer import load_config, load_streamer
+from image_streamer import Config, load_config, load_streamer
 
 print("Waiting for 5 seconds")  # noqa
 time.sleep(5)
@@ -145,6 +145,14 @@ def rotate_for_orientation(image: Image.Image):
 
     return image
 
+def text_measure(config: Config, text: str):
+    # Define the font
+    custom_font = tkinter.font.Font(family=config.text.font, size=config.text.font, weight=config.text.type)
+
+    # Measure the dimensions
+    text_width = custom_font.measure(text)
+    text_height = custom_font.metrics("linespace")  # Total height of a line of text
+    return text_width, text_height
 
 async def main_thread(event: asyncio.Event):
     global image, current_path, config
@@ -186,13 +194,32 @@ async def main_thread(event: asyncio.Event):
                     i += 1
                     current = current.parent
 
-                canvas.create_text(
-                    config.text.x, config.text.y,
-                    text=text,
-                    font=(config.text.font, config.text.font_size, config.text.type),
-                    fill=config.text.color,
-                    anchor=config.text.anchor # ["nw", "n", "ne", "w", "center", "e", "sw", "s", "se"]
-                )
+                def draw_text():
+                    return canvas.create_text(
+                        config.text.x, config.text.y,
+                        text=text,
+                        font=(config.text.font, config.text.font_size, config.text.type),
+                        fill=config.text.color,
+                        anchor=config.text.anchor # ["nw", "n", "ne", "w", "center", "e", "sw", "s", "se"]
+                    )
+
+                if config.text.background:
+                    # Draw text on canvas
+                    text_id = draw_text()
+
+                    # Get bounding box of the text
+                    bbox = list(canvas.bbox(text_id))
+                    _width, _height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+                    bbox[0] -= config.text.background.padding[2]
+                    bbox[2] += config.text.background.padding[0]
+                    bbox[1] -= config.text.background.padding[3]
+                    bbox[3] += config.text.background.padding[1]
+
+                    canvas.create_rectangle(*bbox, fill=config.text.background.color, outline=config.text.background.outline)
+                
+                draw_text()
+
 
         # run screen updates
         root.update_idletasks()

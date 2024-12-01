@@ -21,6 +21,11 @@ class _StreamerConfig:
     passwd: str = ""
     user: str = ""
 
+@dataclasses.dataclass
+class Background:
+    color: str = "black"
+    padding: List[float] = dataclasses.field(default_factory=lambda: [5, 5, 5, 5])
+    outline: str = "black"
 
 @dataclasses.dataclass
 class _TextConfig:
@@ -33,6 +38,7 @@ class _TextConfig:
     format: str = "%0"
     type: str = "bold"
     anchor: str = "nw"
+    background: Optional[Background] = None
 
 @dataclasses.dataclass
 class Config:
@@ -47,6 +53,11 @@ class Config:
     def from_dict(self, data: dict):
         _text = data.pop("text", None)
         text = _TextConfig(**_text) if _text is not None else None
+        if _text is not None:
+            _background = _text.pop('background', None)
+            if _background is not None:
+                text.background = Background(**_background)
+
         _streamer = data.pop("streamer")
         streamer = _StreamerConfig(**_streamer)
 
