@@ -23,7 +23,7 @@ class _StreamerConfig:
 
 @dataclasses.dataclass
 class Background:
-    color: str = "black"
+    color: str = "white"
     padding: List[float] = dataclasses.field(default_factory=lambda: [5, 5, 5, 5])
     outline: str = "black"
 
@@ -33,7 +33,7 @@ class _TextConfig:
     x: int = 10
     y: int = 10
     font_size: int = 24
-    color: str = "white"
+    color: str = "black"
     font: str = "Arial"
     format: str = "%0"
     type: str = "bold"
