@@ -5,15 +5,12 @@ import time
 from pathlib import Path
 
 import numpy as np
-from PIL import ExifTags, Image, ImageDraw, ImageFont, ImageTk
+from PIL import ExifTags, Image, ImageTk
 
-from image_streamer import Config, load_config, load_streamer
+from image_streamer import load_config, load_streamer
 
-cur_dir = Path(__file__).parent
-config = load_config(cur_dir / "config.yaml")
-
-print(f"Waiting for {config.initial_sleep} seconds")  # noqa
-time.sleep(config.initial_sleep)
+print("Waiting for 5 seconds")  # noqa
+time.sleep(5)
 print("Starting App")
 
 # the tkinter library changed it's name from Python 2 to 3.
@@ -25,11 +22,12 @@ else:
     import tkinter
 
 
+cur_dir = Path(__file__).parent
 
+config = load_config(cur_dir / "config.yaml")
 root = tkinter.Tk()
 
 w, h = root.winfo_screenwidth(), root.winfo_screenheight()
-print(f"{w=} | {h=}")
 is_fullscreen = False
 
 
@@ -109,7 +107,7 @@ async def update_image(event: asyncio.Event):
         once = False
 
 
-def resize_fit(image: Image.Image, target_width: int, target_height: int):
+def resize_fit(image, target_width: int, target_height: int):
     """ resizes image with keeping aspect ratio """
     image_width, image_height = image.size[0], image.size[1]
 
@@ -147,104 +145,6 @@ def rotate_for_orientation(image: Image.Image):
 
     return image
 
-def get_avg_pixel_value(image, box):
-    # Crop the image to the bounding box
-    cropped_region = image.crop(box)
-
-    # Get pixel values (as a list)
-    pixel_values = list(cropped_region.getdata())
-    return np.mean(pixel_values)
-
-def get_text_box(image, x, y, text, font_size: int):
-    draw = ImageDraw.Draw(image)
-
-    # Specify the font
-    font = ImageFont.truetype("arial.ttf", font_size)
-    bbox = draw.textbbox((x, y), text, font=font)
-    return bbox
-
-def compute_intersection(box1, box2):
-    """
-    Calculate Intersection over Union (IoU) for two bounding boxes.
-
-    Parameters:
-        box1 (tuple): (x1, y1, x2, y2) format where (x1, y1) is the top-left 
-                      and (x2, y2) is the bottom-right corner.
-        box2 (tuple): Same format as box1.
-
-    Returns:
-        float: IoU value between 0 and 1.
-    """
-    # Unpack the coordinates
-    x1_min, y1_min, x1_max, y1_max = box1
-    x2_min, y2_min, x2_max, y2_max = box2
-
-    area1 = (x1_max - x1_min) * (y1_max - y1_min)
-
-    # Calculate intersection coordinates
-    inter_x_min = max(x1_min, x2_min)
-    inter_y_min = max(y1_min, y2_min)
-    inter_x_max = min(x1_max, x2_max)
-    inter_y_max = min(y1_max, y2_max)
-
-    # Compute the area of intersection
-    inter_width = max(0, inter_x_max - inter_x_min)
-    inter_height = max(0, inter_y_max - inter_y_min)
-    inter_area = inter_width * inter_height
-    return inter_area / area1
-
-def get_text_color(config: Config, resized_image: Image.Image, text: str):
-    color = config.text.color
-    text_box = get_text_box(resized_image, config.text.x, config.text.y, text, config.text.font_size)
-
-    if config.text.contrast_color:
-        # location of the image on the screen
-
-        w, h = root.winfo_width(), root.winfo_height()
-        image_box = [
-            w // 2 - resized_image.width // 2,
-            h // 2 - resized_image.height // 2,
-            w // 2 + resized_image.width // 2,
-            h // 2 + resized_image.height // 2,
-        ]
-        print(f"{text_box=} | {image_box=} | {w=} | {h=} | image={resized_image.size=}")
-        inter = compute_intersection(text_box, image_box)
-        print(f"text intersection with image: {inter}")
-
-        if inter < 0.7:
-            color = config.text.black_border_color or config.text.color
-            print(f"switching to color {color} reason: {inter=}. Text on black.")
-        else:
-            image_text_box = [
-                text_box[0] - image_box[0],
-                text_box[1] - image_box[1],
-                text_box[2] - image_box[0],
-                text_box[3] - image_box[1],
-            ]
-            print("image text box: ", image_text_box)
-            avg_pixel_value = get_avg_pixel_value(
-                image, image_text_box
-            )
-            print("Avg Pixel value: ", avg_pixel_value)
-
-            if avg_pixel_value > config.text.white_threshold:
-                color = config.text.contrast_color or color
-                print(f"switching to contrast color {color} reason: {avg_pixel_value} > {config.text.white_threshold}. Image too white")
-
-    return color
-
-def get_text(current_path: Path, config: Config):
-    # format text by format given
-    current = current_path
-    text = copy.deepcopy(config.text.format)
-    i = 0
-
-    while current.parent != Path("/") and i != 50:
-        if f"%{i}" in text:
-            text = text.replace(f"%{i}", current.name)
-        i += 1
-        current = current.parent
-    return text
 
 async def main_thread(event: asyncio.Event):
     global image, current_path, config
@@ -259,31 +159,38 @@ async def main_thread(event: asyncio.Event):
             continue
 
         if event.is_set():
+            
+            print("event is set...")
             event.clear()
-
-            # delete the canvas
             print("updating image from image var...")
             canvas.delete("all")
             assert isinstance(
                 image, Image.Image), f"image is {type(image)} type, instead of Image.Image"
-            
-            # transform image
+            # TODO: check which orientation the image has.
             image = rotate_for_orientation(image)
             resized = resize_fit(image, w, h)
 
-            # write image
             tk_image = ImageTk.PhotoImage(resized)
             canvas.create_image(w // 2, h // 2, image=tk_image)
             
             if config.text:
-                text = get_text(current_path, config)
-                color = get_text_color(config, resized, text)
                 
+                # format text by format given
+                current = current_path
+                text = copy.deepcopy(config.text.format)
+                i = 0
+
+                while current.parent != Path("/") and i != 50:
+                    if f"%{i}" in text:
+                        text = text.replace(f"%{i}", current.name)
+                    i += 1
+                    current = current.parent
+
                 canvas.create_text(
                     config.text.x, config.text.y,
                     text=text,
                     font=(config.text.font, config.text.font_size, config.text.type),
-                    fill=color,
+                    fill=config.text.color,
                     anchor=config.text.anchor # ["nw", "n", "ne", "w", "center", "e", "sw", "s", "se"]
                 )
 

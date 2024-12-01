@@ -24,6 +24,7 @@ class _StreamerConfig:
 
 @dataclasses.dataclass
 class _TextConfig:
+    show: bool = False
     x: int = 10
     y: int = 10
     font_size: int = 24
@@ -32,9 +33,6 @@ class _TextConfig:
     format: str = "%0"
     type: str = "bold"
     anchor: str = "nw"
-    contrast_color: Optional[str] = None
-    black_border_color: Optional[str] = None
-    white_threshold: int = 235 # 0 to 255 (255 = white)
 
 @dataclasses.dataclass
 class Config:
@@ -44,7 +42,6 @@ class Config:
     timeout: int = 5
     mode: str = "endless"
     text: Optional[_TextConfig] = None
-    initial_sleep: int = 5
     
     @classmethod
     def from_dict(self, data: dict):
