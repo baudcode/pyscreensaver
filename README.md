@@ -6,7 +6,40 @@ device that can display latest family vacation pictures in the living room on a 
 It should also auto-update itself with the latest pictures after each run-through. 
 
 Use the `config.yaml` to connect either to an **ftp server** or stream data **locally** from drive (this path could also be a mounted path from shared space).
-See `text_config.yaml` for adding and showing text (filename + parents).
+
+Example Config:
+```yaml
+streamer:
+  type: DirectoryStreamer
+  path: /Users/baudcode/Digital/Testing
+  randomize: true # randomize the images after each run-trough of all images at this location
+  # extensions: ["jpg", "png", "jpeg"]
+  # pattern: "*"
+
+  # type: FTPStreamer
+  # host: localhost # mandatory
+  # path: ""
+  # user:
+  # passwd: 
+
+timeout: 5 # this this to define the wait interval between image loads
+mode: "endless" # to stop after one iteration use 'once', otherwise use 'endless' to run in infite mode
+fullscreen: true
+text: # show information about the file on screen
+  x: 10
+  y: 10
+  font_size: 24
+  color: "white"
+  font: "Arial"
+  type: "bold"
+  format: "%0 - %1" # shows parent directories (%1, %2, %2)
+  color: "white"
+  anchor: "nw"
+  background:
+    color: "black"
+    outline: "white"
+    padding: [5, 5, 5, 5] # top, bottom, left, right
+```
 
 #### Install and run:
 
