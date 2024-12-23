@@ -29,7 +29,6 @@ class Background:
 
 @dataclasses.dataclass
 class _TextConfig:
-    show: bool = False
     x: int = 10
     y: int = 10
     font_size: int = 24
