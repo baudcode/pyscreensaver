@@ -209,7 +209,7 @@ async def main_thread(event: asyncio.Event):
 
                     # Get bounding box of the text
                     bbox = list(canvas.bbox(text_id))
-                    _width, _height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                    # _width, _height = bbox[2] - bbox[0], bbox[3] - bbox[1]
 
                     bbox[0] -= config.text.background.padding[2]
                     bbox[2] += config.text.background.padding[0]
